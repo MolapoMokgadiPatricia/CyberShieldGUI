@@ -12,24 +12,36 @@ namespace CyberShieldGUI
             new Dictionary<string, List<string>>
         {
             {
+               
                 "password", new List<string>
                 {
-                    "Use a strong password with at least 12 characters. Mix capital letters, small letters, numbers, and symbols. Avoid using your name, birthday, or phone number.",
-                    "Do not use the same password for all your accounts. If one account is hacked, criminals may try the same password on your email, banking, or social media.",
-                    "A password manager can help you store passwords safely. It also creates strong passwords so you do not have to remember many different ones.",
-                    "Change your password immediately if you think someone else knows it. Also log out of other devices and turn on two-factor authentication.",
-                    "A good password should be hard for others to guess but easy for you to remember. A passphrase like BlueCoffee!River27 is stronger than Mokgadi123."
+                    "Password security is one of the most important parts of staying safe online. Use a strong password with at least 12 characters, including capital letters, small letters, numbers, and symbols.",
+
+                    "Protecting your online accounts starts with using unique passwords. Avoid using the same password for email, banking, and social media accounts because one hacked account can put others at risk.",
+
+                    "A password manager is a useful cybersecurity tool that safely stores your passwords and creates strong passwords for you. This makes online security easier and more convenient.",
+
+                    "If you think someone may know your password, change it immediately and enable two-factor authentication for extra protection. Acting quickly can help prevent unauthorized access.",
+
+                    "Strong passwords should be difficult for attackers to guess but easy for you to remember. A passphrase like BlueCoffee!River27 is much safer than simple passwords like Mokgadi123."
                 }
+
             },
             {
+               
                 "phishing", new List<string>
                 {
-                    "Phishing is when scammers send fake messages to steal your details. Be careful with emails or SMSes asking for passwords, PINs, or OTPs.",
-                    "Do not click links in suspicious messages. Rather open the official website yourself or call the company using its official number.",
-                    "Phishing messages often create fear or urgency, such as 'your account will be blocked'. Stop, check, and verify before responding.",
-                    "Check the sender's email address carefully. Scammers often use addresses that look almost real but contain small spelling changes.",
-                    "Do not open unexpected attachments. They may contain malware, even if they look like invoices, CVs, or proof of payment."
+                    "Phishing is one of the most common cyber threats today. Scammers use fake emails, SMSes, or websites to trick people into sharing passwords, banking details, or personal information.",
+
+                    "Staying cautious online can help protect you from phishing attacks. Avoid clicking links in suspicious messages and rather visit the official website directly yourself.",
+
+                    "Phishing messages often create panic or urgency by saying things like 'your account will be blocked'. Take a moment to stop, think, and verify the message before responding.",
+
+                    "Cybercriminals often use email addresses that look almost identical to real company addresses. Always check for small spelling changes or unusual characters before trusting a sender.",
+
+                    "Unexpected attachments can sometimes contain harmful malware hidden inside files like invoices, CVs, or proof of payment documents. Only open attachments from trusted sources."
                 }
+
             },
             {
                 "scam", new List<string>
