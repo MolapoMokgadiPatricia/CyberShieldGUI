@@ -148,6 +148,7 @@ This prevents crashes and maintains a smooth user experience.
 ---
 
 # GitHub
+https://github.com/MolapoMokgadiPatricia/CyberShieldGUI.git
 
 This repository includes:
 
