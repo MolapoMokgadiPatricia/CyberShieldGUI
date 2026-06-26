@@ -30,6 +30,8 @@ namespace CyberShieldGUI
         public int TotalQuestions => shuffledQuestions.Count;
         public int QuestionNumber => currentIndex + 1;
 
+        public int LastScore => score;
+
         public QuizManager(ActivityLog log)
         {
             activityLog = log;
@@ -123,6 +125,12 @@ namespace CyberShieldGUI
                    $"Your final score: {score} out of {total}  ({percent:F0}%)\n\n" +
                    $"{verdict}\n\n" +
                    "Type 'start quiz' to play again, or ask me any cybersecurity question!";
+        }
+
+        public void ForceEnd()
+        {
+            IsActive = false;
+            AwaitingAnswer = false;
         }
     }
 }
