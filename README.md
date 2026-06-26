@@ -111,7 +111,7 @@ This creates a more natural conversation flow.
 
 ---
 
-## Memory and Recall
+
 
 The chatbot remembers:
 
