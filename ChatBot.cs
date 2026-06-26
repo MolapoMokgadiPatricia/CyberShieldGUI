@@ -159,9 +159,9 @@ namespace CyberShieldGUI
                 }
 
                 // Any other input during quiz — remind the user how to answer or exit
-                return "You are in the middle of a quiz!\n\n" +
-                       $"{quizManager.CurrentQuestion.Question}\n\n" +
-                       "Type A, B, C, or D to answer  —  or type 'stop quiz' to exit.";
+                return "You are in the middle of a quiz!\n\n"
+                    + $"{quizManager.CurrentQuestion.Question}\n\n"
+                    + "Type A, B, C, or D to answer  —  or type 'stop quiz' to exit.";
             }
 
             // ── Classify all other Part 3 input ──────────────────────────────────
