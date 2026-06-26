@@ -2,9 +2,9 @@
 
 ## Overview
 
-CyberShield is a cybersecurity awareness chatbot developed using C# and Windows Presentation Foundation (WPF). The purpose of the application is to educate users about online safety, cyber threats, and best cybersecurity practices in a simple and beginner-friendly manner.
+CyberShield is a cybersecurity awareness chatbot developed using C# and Windows Presentation Foundation (WPF). The application aims to educate users about cybersecurity threats, online safety, and digital best practices through an interactive chatbot experience.
 
-The chatbot is designed for users with little or no technical knowledge and provides guidance on common cybersecurity topics such as password safety, phishing scams, malware, ransomware, online privacy, and social engineering.
+Part 3 extends the project by introducing task management, MySQL database integration, cybersecurity quizzes, natural language processing enhancements, and activity logging while preserving all functionality from Parts 1 and 2.
 
 ---
 
@@ -13,23 +13,28 @@ The chatbot is designed for users with little or no technical knowledge and prov
 ## Interactive GUI
 
 * User-friendly WPF graphical interface
-* Simple and clean chatbot layout
+* Clean and intuitive chatbot layout
 * Personalized greeting system
+* Improved navigation between chatbot and task management features
 
-## Cybersecurity Awareness Topics
+## Cybersecurity Awareness
 
-The chatbot provides guidance on:
+The chatbot provides educational guidance on:
 
-* Password safety
+* Password security
 * Phishing attacks
 * Online scams
+* Malware
+* Ransomware
+* VPN usage
+* Safe Wi-Fi practices
+* Two-Factor Authentication (2FA)
 * Privacy protection
-* Malware and ransomware
-* VPN and Wi-Fi safety
-* Two-factor authentication (2FA)
 * Social engineering
 
-## Smart Chatbot Functionality
+---
+
+# Smart Chatbot Functionality
 
 * Keyword recognition
 * Randomized responses
@@ -38,12 +43,101 @@ The chatbot provides guidance on:
 * Sentiment detection
 * User memory and recall
 * Personalized responses
+* Improved Natural Language Processing (NLP)
 
-## Multimedia Features
+---
+
+# Task Assistant
+
+The chatbot includes a cybersecurity task manager allowing users to:
+
+* Create new security-related tasks
+* View saved tasks
+* Mark tasks as completed
+* Delete tasks
+* Set reminders for important cybersecurity activities
+
+Example tasks include:
+
+* Change passwords
+* Enable Two-Factor Authentication
+* Scan computer for malware
+* Update antivirus software
+* Backup important files
+
+---
+
+# MySQL Database Integration
+
+CyberShield uses MySQL to permanently store user tasks.
+
+Database Features:
+
+* Database connection testing
+* Persistent task storage
+* Add tasks
+* View tasks
+* Delete tasks
+* Update task completion status
+* Error handling for database operations
+
+Database:
+
+CyberShieldDB
+
+Table:
+
+Tasks
+
+---
+
+# Cybersecurity Quiz
+
+The application includes an interactive quiz featuring multiple-choice cybersecurity questions.
+
+Features:
+
+* Multiple questions
+* Automatic scoring
+* Instant feedback
+* Educational explanations
+* Final score summary
+
+Quiz Topics:
+
+* Password Security
+* Phishing
+* Malware
+* Ransomware
+* VPN
+* Online Privacy
+* Safe Browsing
+* Two-Factor Authentication
+* Social Engineering
+* Cyber Hygiene
+
+---
+
+# Activity Log
+
+The chatbot records user activities such as:
+
+* Task creation
+* Task completion
+* Task deletion
+* Quiz participation
+* Reminder creation
+* Chatbot interactions
+
+This improves usability and allows users to track their cybersecurity activities.
+
+---
+
+# Multimedia Features
 
 * Audio greeting
-* ASCII logo display
-* Interactive conversation experience
+* ASCII logo
+* Interactive chatbot experience
 
 ---
 
@@ -51,7 +145,10 @@ The chatbot provides guidance on:
 
 * C#
 * .NET
-* WPF (Windows Presentation Foundation)
+* Windows Presentation Foundation (WPF)
+* MySQL
+* MySQL Workbench
+* MySql.Data
 * Visual Studio 2026
 * GitHub
 
@@ -62,123 +159,75 @@ The chatbot provides guidance on:
 ```text
 CyberShieldGUI/
 │
+├── Models/
+│   ├── CyberTask.cs
+│   └── QuizQuestion.cs
+│
+├── Services/
+│   ├── ChatBot.cs
+│   ├── DatabaseService.cs
+│   ├── QuizService.cs
+│   ├── ActivityLogService.cs
+│   └── ResponseBank.cs
+│
+├── Audio/
+│   └── Greeting.wav
+│
 ├── MainWindow.xaml
 ├── MainWindow.xaml.cs
-├── ChatBot.cs
-├── ResponseBank.cs
-├── AudioGreetings.cs
-├── Greeting.wav
 ├── App.xaml
 ├── App.xaml.cs
-└── CyberShieldGUI.csproj
+├── CyberShieldGUI.csproj
+└── README.md
 ```
 
 ---
 
+# Error Handling
 
-# Chatbot Functionalities
+The application includes exception handling for:
 
-## Keyword Recognition
-
-The chatbot recognises cybersecurity-related keywords such as:
-
-* password
-* phishing
-* scam
-* privacy
-* malware
-* ransomware
-
-The chatbot then provides relevant cybersecurity guidance.
+* Invalid user input
+* Database connection failures
+* Empty task fields
+* SQL exceptions
+* Unexpected application errors
 
 ---
 
-## Random Responses
+# GitHub Repository
 
-Responses are stored using lists and dictionaries. The chatbot randomly selects responses to keep conversations engaging and less repetitive.
+Repository:
 
----
+https://github.com/MolapoMokgadiPatricia/CyberShieldGUI
 
-## Conversation Flow
+GitHub Releases:
 
-The chatbot supports follow-up phrases such as:
-
-* "tell me more"
-* "explain more"
-* "another tip"
-
-This creates a more natural conversation flow.
-
----
-
-
-
-The chatbot remembers:
-
-* the user's name
-* favourite cybersecurity topics
-* previous conversation topics
-
-This allows the chatbot to personalize responses.
-
----
-
-## Sentiment Detection
-
-The chatbot detects emotions such as:
-
-* worried
-* confused
-* frustrated
-* nervous
-* curious
-
-The chatbot then responds empathetically while continuing to provide cybersecurity advice.
-
----
-
-## Error Handling
-
-If the chatbot does not understand the user's input, it provides a default response such as:
-
-> "I'm not sure I understand. Can you try rephrasing?"
-
-This prevents crashes and maintains a smooth user experience.
-
----
-
-# GitHub
-https://github.com/MolapoMokgadiPatricia/CyberShieldGUI.git
-
-This repository includes:
-
-
-* Git version tags
-* v1.0
-* v1.1
+* v1.3 – Initial Chatbot
+* v1.4 – Enhanced Chatbot Features
+* v1.5 – Part 3 Final Submission
 
 ---
 
 # Educational Purpose
 
-The aim of this project is to:
+The CyberShield chatbot was developed for educational purposes as part of the PROG6221 Portfolio of Evidence.
+
+The project aims to:
 
 * Promote cybersecurity awareness
-* Educate users about online safety
-* Encourage safe online behaviour
-* Provide cybersecurity guidance in simple language
+* Teach safe online practices
+* Encourage responsible digital behaviour
+* Demonstrate object-oriented programming principles
+* Apply database integration using MySQL
+* Showcase GUI application development using WPF
 
 ---
 
 # Author
 
-## Mokgadi Patricia Molapo
+**Mokgadi Patricia Molapo**
 
 Diploma in Information Software Development
+
 Rosebank College
-
----
-
-# License
-
-This project is for educational purposes only.
