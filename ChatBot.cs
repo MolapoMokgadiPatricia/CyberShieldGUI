@@ -8,17 +8,18 @@ namespace CyberShieldGUI
     // Returns a string response or null if the handler does not apply.
     internal delegate string? ResponseHandler(string input);
 
-    // Core chatbot logic. Routes user input through a delegate pipeline
-    // and handles keyword recognition, sentiment detection, memory, and conversation flow.
+    // Core chatbot logic for Parts 1, 2, and 3.
+    // Routes user input through a delegate pipeline.
+    // Part 3 adds a new handler at the front of the pipeline for tasks, quiz, and activity log.
     internal class ChatBot
     {
         // Stores the user's name for personalised responses
         private readonly string userName;
 
-        // Remembers the topic the user expressed interest in (null until user declares one)
+        // Remembers the topic the user expressed interest in (null until declared)
         private string? userInterest;
 
-        // Tracks the most recently discussed topic for follow-up handling (null at start)
+        // Tracks the most recently discussed topic for follow-up handling
         private string? lastTopic;
 
         // Used for random response selection
@@ -30,6 +31,16 @@ namespace CyberShieldGUI
         // List of delegate handlers tried in order — first non-null result wins
         private readonly List<ResponseHandler> handlerPipeline;
 
+        // Part 3 services
+        private readonly ActivityLog activityLog;
+        private readonly TaskManager taskManager;
+        private readonly QuizManager quizManager;
+        private readonly NlpProcessor nlp;
+
+        // Tracks whether the bot is waiting for a yes/no reminder response after adding a task
+        private bool awaitingReminderResponse;
+        private string? lastAddedTaskTitle;
+
         public ChatBot(string name)
         {
             userName = string.IsNullOrWhiteSpace(name) ? "User" : name;
@@ -38,9 +49,16 @@ namespace CyberShieldGUI
             random = new Random();
             topicResponseIndex = new Dictionary<string, int>();
 
-            // Build the pipeline — order is important, specific handlers run before the fallback
+            // Initialise Part 3 services
+            activityLog = new ActivityLog();
+            taskManager = new TaskManager(activityLog);
+            quizManager = new QuizManager(activityLog);
+            nlp = new NlpProcessor();
+
+            // Build the pipeline — Part 3 handler runs first, then Part 2 handlers
             handlerPipeline = new List<ResponseHandler>
             {
+                HandlePart3Input,           // NEW: task/quiz/log NLP routing
                 HandleFollowUpInput,        // handles "tell me more", "another tip", etc.
                 HandleInterestInput,        // handles "I am interested in privacy", etc.
                 HandleSentimentAndKeyword,  // handles emotion + cybersecurity topic
@@ -48,10 +66,12 @@ namespace CyberShieldGUI
             };
         }
 
-        // Public getters used by the UI to display session info
+        // Public getters used by the UI
         public string GetUserName() => userName;
         public string? GetUserInterest() => userInterest;
         public string? GetLastTopic() => lastTopic;
+        public ActivityLog GetActivityLog() => activityLog;
+        public TaskManager GetTaskManager() => taskManager;
 
         // Returns the welcome message shown at the start of a session
         public string GetWelcomeMessage()
@@ -65,20 +85,20 @@ namespace CyberShieldGUI
                    "  - Two-factor authentication (2FA)\n" +
                    "  - Wi-Fi and VPN safety\n" +
                    "  - Online scams\n\n" +
-                   "What would you like to know about today?";
+                   "  - Add tasks: type 'add task: Enable 2FA'\n" +
+                   "  - Take a quiz: type 'start quiz'\n" +
+                   "  - View activity log: type 'show activity log'\n\n" +
+                   "What would you like to do today?";
         }
 
         // Validates input then passes it through the delegate pipeline.
-        // The first handler to return a non-null string provides the response.
         public string ProcessInput(string input)
         {
             if (string.IsNullOrWhiteSpace(input))
                 return "Please type something so I can help you.";
 
-            // Normalise input for consistent matching
             string normalised = input.ToLower().Trim();
 
-            // Run each delegate handler in order
             foreach (ResponseHandler handler in handlerPipeline)
             {
                 string? result = handler(normalised);
@@ -89,8 +109,102 @@ namespace CyberShieldGUI
             return $"I did not quite understand that, {userName}. Could you rephrase?";
         }
 
-        // Handler 1: Checks if the user wants more information on the current topic.
-        // Returns null if no follow-up phrase is detected.
+        // ── PART 3 HANDLER ────────────────────────────────────────────────────────
+        // Handles task management, quiz, and activity log commands using NLP.
+        // Returns null if the input is not a Part 3 command, passing it to the next handler.
+
+        private string? HandlePart3Input(string input)
+        {
+            // If bot is waiting for yes/no about setting a reminder after adding a task
+            if (awaitingReminderResponse)
+            {
+                awaitingReminderResponse = false;
+
+                if (input.Contains("yes") || input.Contains("sure") ||
+                    input.Contains("remind") || input.Contains("ok"))
+                {
+                    return $"How many days from today would you like the reminder?\n" +
+                           $"For example, type: 'set reminder task {taskManager.Tasks.Count} in 7 days'";
+                }
+                else if (input.Contains("no") || input.Contains("nope") ||
+                         input.Contains("not now"))
+                {
+                    return $"No problem! Task '{lastAddedTaskTitle}' has been saved without a reminder.\n" +
+                           "Type 'show tasks' to see your task list.";
+                }
+            }
+
+            // If a quiz is active, prioritise quiz answers
+            if (quizManager.IsActive && quizManager.AwaitingAnswer)
+            {
+                var quizIntent = nlp.Classify(input);
+
+                if (quizIntent == NlpProcessor.Intent.AnswerQuiz)
+                {
+                    activityLog.Add($"Quiz — answered question {quizManager.QuestionNumber}");
+                    return quizManager.SubmitAnswer(nlp.QuizAnswerIndex);
+                }
+
+                // If quiz is active and input is not a valid answer, prompt the user
+                if (!input.Contains("stop quiz") && !input.Contains("quit quiz"))
+                {
+                    return "You are in the middle of a quiz! Please type A, B, C, or D to answer.\n\n" +
+                           $"{quizManager.CurrentQuestion.Question}";
+                }
+            }
+
+            // Classify the input to determine what the user wants to do
+            NlpProcessor.Intent intent = nlp.Classify(input);
+
+            switch (intent)
+            {
+                case NlpProcessor.Intent.AddTask:
+                    {
+                        lastAddedTaskTitle = nlp.TaskTitle;
+                        string msg = taskManager.AddTask(nlp.TaskTitle, nlp.TaskDescription);
+                        awaitingReminderResponse = true;
+                        return msg;
+                    }
+
+                case NlpProcessor.Intent.ShowTasks:
+                    activityLog.Add("Viewed task list");
+                    return taskManager.GetTaskListMessage();
+
+                case NlpProcessor.Intent.CompleteTask:
+                    return taskManager.CompleteTask(nlp.TaskPosition);
+
+                case NlpProcessor.Intent.DeleteTask:
+                    return taskManager.DeleteTask(nlp.TaskPosition);
+
+                case NlpProcessor.Intent.SetReminder:
+                    {
+                        int days = nlp.ReminderDays > 0 ? nlp.ReminderDays : 1;
+                        DateTime reminderDate = DateTime.Today.AddDays(days);
+                        int pos = nlp.TaskPosition == -1
+                            ? taskManager.Tasks.Count
+                            : nlp.TaskPosition;
+                        return taskManager.SetReminder(pos, reminderDate);
+                    }
+
+                case NlpProcessor.Intent.StartQuiz:
+                    return quizManager.Start();
+
+                case NlpProcessor.Intent.ShowActivityLog:
+                    activityLog.Add("Viewed activity log");
+                    return activityLog.GetSummary(showAll: false);
+
+                case NlpProcessor.Intent.ShowFullLog:
+                    activityLog.Add("Viewed full activity log");
+                    return activityLog.GetSummary(showAll: true);
+
+                default:
+                    return null; // Not a Part 3 command — pass to next handler
+            }
+        }
+
+        // ── PART 2 HANDLERS (unchanged from your original) ────────────────────────
+
+        // Handler: Checks if the user wants more information on the current topic.
         private string? HandleFollowUpInput(string input)
         {
             bool isFollowUp = ResponseBank.FollowUpPhrases.Any(phrase => input.Contains(phrase));
@@ -103,9 +217,7 @@ namespace CyberShieldGUI
             return $"Here is more on {lastTopic}:\n\n{GetTopicResponse(lastTopic)}";
         }
 
-        // Handler 2: Checks if the user is declaring interest in a topic.
-        // Stores the topic in memory and personalises future responses.
-        // Returns null if no interest phrase is detected.
+        // Handler: Checks if the user is declaring interest in a topic.
         private string? HandleInterestInput(string input)
         {
             bool isInterest = input.Contains("interested in") ||
@@ -131,9 +243,7 @@ namespace CyberShieldGUI
                    "Could you be more specific? For example: 'I am interested in privacy'.";
         }
 
-        // Handler 3: Detects sentiment and/or cybersecurity keywords.
-        // Combines them when both are present for an empathetic and informative reply.
-        // Returns null if neither is found.
+        // Handler: Detects sentiment and/or cybersecurity keywords.
         private string? HandleSentimentAndKeyword(string input)
         {
             string? sentimentResponse = DetectSentiment(input);
@@ -159,14 +269,14 @@ namespace CyberShieldGUI
             return null;
         }
 
-        // Handler 4: Handles greetings, purpose questions, gratitude, and goodbye.
-        // Always returns a non-null string — this is the final fallback handler.
+        // Handler: Handles greetings, purpose questions, gratitude, and goodbye.
         private string HandleGeneralInput(string input)
         {
             if (input.Contains("hello") || input.Contains("hi ") ||
                 input == "hi" || input.Contains("hey"))
                 return $"Hello again, {userName}! What would you like to know about today? " +
-                       "Ask me about passwords, phishing, privacy, malware, 2FA, Wi-Fi, or scams.";
+                       "Ask me about passwords, phishing, privacy, malware, 2FA, Wi-Fi, or scams.\n\n" +
+                       "Or try: 'add task', 'start quiz', or 'show activity log'.";
 
             if (input.Contains("how are you"))
                 return "I am a program designed to keep you safe online — fully operational and ready to help!";
@@ -187,16 +297,17 @@ namespace CyberShieldGUI
                 input.Contains("see you"))
                 return $"Goodbye, {userName}! Stay safe online.";
 
-            // If the user has a stored interest, reference it in the fallback
             if (userInterest != null)
                 return $"I did not quite understand that, {userName}. Since you are interested in {userInterest}, " +
-                       $"would you like another tip on that? Or ask about passwords, phishing, malware, privacy, 2FA, Wi-Fi, or scams.";
+                       $"would you like another tip on that?\n\n" +
+                       "Or try: 'add task', 'start quiz', or 'show activity log'.";
 
-            return $"I did not quite understand that, {userName}. Could you rephrase? " +
-                   "You can ask about passwords, phishing, privacy, malware, ransomware, 2FA, Wi-Fi, or scams.";
+            return $"I did not quite understand that, {userName}. Could you rephrase?\n\n" +
+                   "Cybersecurity topics: passwords, phishing, privacy, malware, ransomware, 2FA, Wi-Fi, scams.\n" +
+                   "Part 3 commands: 'add task', 'show tasks', 'start quiz', 'show activity log'.";
         }
 
-        // Checks input for known sentiment words and returns the matching empathetic response.
+        // Checks input for sentiment words
         private string? DetectSentiment(string input)
         {
             foreach (var sentiment in ResponseBank.SentimentResponses)
@@ -207,56 +318,37 @@ namespace CyberShieldGUI
             return null;
         }
 
-        // Scans input for known cybersecurity keywords including common variations.
-        // Returns the matching key from ResponseBank or null if nothing matches.
+        // Scans input for cybersecurity keywords
         private string? DetectKeyword(string input)
         {
             if (input.Contains("2fa") || input.Contains("two factor") ||
                 input.Contains("two-factor") || input.Contains("multifactor") ||
                 input.Contains("authenticator"))
-            {
-                lastTopic = "2fa";
-                return "2fa";
-            }
+            { lastTopic = "2fa"; return "2fa"; }
 
             if (input.Contains("wifi") || input.Contains("wi-fi") ||
                 input.Contains("public network") || input.Contains("hotspot") ||
                 input.Contains("public wi"))
-            {
-                lastTopic = "wifi";
-                return "wifi";
-            }
+            { lastTopic = "wifi"; return "wifi"; }
 
             if (input.Contains("social engineering") ||
                 input.Contains("pretexting") ||
                 input.Contains("manipulation"))
-            {
-                lastTopic = "social engineering";
-                return "social engineering";
-            }
+            { lastTopic = "social engineering"; return "social engineering"; }
 
-            // Check ransomware before malware so it gets its own response list
             if (input.Contains("ransomware") || input.Contains("ransom"))
-            {
-                lastTopic = "ransomware";
-                return "ransomware";
-            }
+            { lastTopic = "ransomware"; return "ransomware"; }
 
             foreach (string key in ResponseBank.KeywordResponses.Keys)
             {
                 if (input.Contains(key))
-                {
-                    lastTopic = key;
-                    return key;
-                }
+                { lastTopic = key; return key; }
             }
 
             return null;
         }
 
-        // Returns the next response for a given topic.
-        // Phishing responses are selected randomly for variety.
-        // All other topics cycle sequentially so follow-ups always return new info.
+        // Returns the next response for a given topic (random for phishing, sequential for others)
         private string GetTopicResponse(string topic)
         {
             if (!ResponseBank.KeywordResponses.ContainsKey(topic))
@@ -268,12 +360,10 @@ namespace CyberShieldGUI
 
             if (topic == "phishing")
             {
-                // Random selection keeps phishing tips varied
                 response = responses[random.Next(responses.Count)];
             }
             else
             {
-                // Sequential cycling so each follow-up gives a new tip
                 if (!topicResponseIndex.ContainsKey(topic))
                     topicResponseIndex[topic] = 0;
 
@@ -282,7 +372,6 @@ namespace CyberShieldGUI
                 topicResponseIndex[topic] = (idx + 1) % responses.Count;
             }
 
-            // Add personalised prefix if the user declared interest in this topic
             if (userInterest == topic)
                 return $"As someone interested in {topic}, here is something worth knowing:\n\n{response}";
 

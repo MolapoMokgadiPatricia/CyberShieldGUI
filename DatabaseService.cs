@@ -26,7 +26,9 @@ namespace CyberShieldGUI
             }
         }
 
-        public void AddTask(CyberTask task)
+        // FIX 1: Returns the new row's Id so TaskManager can store it back
+        // on the CyberTask object — needed for CompleteTask and DeleteTask to work
+        public int AddTask(CyberTask task)
         {
             using (MySqlConnection conn =
                 new MySqlConnection(connectionString))
@@ -37,17 +39,18 @@ namespace CyberShieldGUI
                 @"INSERT INTO Tasks
                 (Title, Description, ReminderDate, IsCompleted)
                 VALUES
-                (@title, @description, @reminderDate, @completed)";
+                (@title, @description, @reminderDate, @completed);
+                SELECT LAST_INSERT_ID();";
 
                 MySqlCommand cmd =
                     new MySqlCommand(query, conn);
 
                 cmd.Parameters.AddWithValue("@title", task.Title);
                 cmd.Parameters.AddWithValue("@description", task.Description);
-                cmd.Parameters.AddWithValue("@reminderDate", task.ReminderDate);
+                cmd.Parameters.AddWithValue("@reminderDate", (object?)task.ReminderDate ?? DBNull.Value);
                 cmd.Parameters.AddWithValue("@completed", task.IsCompleted);
 
-                cmd.ExecuteNonQuery();
+                return Convert.ToInt32(cmd.ExecuteScalar());
             }
         }
 
@@ -77,8 +80,8 @@ namespace CyberShieldGUI
                         Title = reader["Title"].ToString(),
                         Description = reader["Description"].ToString(),
                         ReminderDate = reader["ReminderDate"] == DBNull.Value
-                            ? null
-                            : Convert.ToDateTime(reader["ReminderDate"]),
+                                           ? null
+                                           : Convert.ToDateTime(reader["ReminderDate"]),
                         IsCompleted = Convert.ToBoolean(reader["IsCompleted"])
                     });
                 }
@@ -94,18 +97,17 @@ namespace CyberShieldGUI
             {
                 conn.Open();
 
-                string query =
-                    "DELETE FROM Tasks WHERE Id = @id";
+                string query = "DELETE FROM Tasks WHERE Id = @id";
 
                 MySqlCommand cmd =
                     new MySqlCommand(query, conn);
 
                 cmd.Parameters.AddWithValue("@id", taskId);
-
                 cmd.ExecuteNonQuery();
             }
         }
 
+        // FIX 2: Use 1 instead of TRUE for reliable boolean update in MySQL
         public void MarkTaskCompleted(int taskId)
         {
             using (MySqlConnection conn =
@@ -113,14 +115,32 @@ namespace CyberShieldGUI
             {
                 conn.Open();
 
-                string query =
-                    "UPDATE Tasks SET IsCompleted = TRUE WHERE Id = @id";
+                string query = "UPDATE Tasks SET IsCompleted = 1 WHERE Id = @id";
 
                 MySqlCommand cmd =
                     new MySqlCommand(query, conn);
 
                 cmd.Parameters.AddWithValue("@id", taskId);
+                cmd.ExecuteNonQuery();
+            }
+        }
 
+        // FIX 3: New method to update the reminder date for a task
+        public void UpdateReminder(int taskId, DateTime reminderDate)
+        {
+            using (MySqlConnection conn =
+                new MySqlConnection(connectionString))
+            {
+                conn.Open();
+
+                string query =
+                    "UPDATE Tasks SET ReminderDate = @reminderDate WHERE Id = @id";
+
+                MySqlCommand cmd =
+                    new MySqlCommand(query, conn);
+
+                cmd.Parameters.AddWithValue("@reminderDate", reminderDate);
+                cmd.Parameters.AddWithValue("@id", taskId);
                 cmd.ExecuteNonQuery();
             }
         }
